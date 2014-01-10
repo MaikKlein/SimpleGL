@@ -54,7 +54,7 @@
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FTk\SimpleGL.fsproj">
+    <ProjectReference Include="..\SimpleGL\SimpleGL.fsproj">
       <Name>SimpleGL</Name>
       <Project>{3142f9e3-ef32-477a-a3e8-2fcdb3a9baea}</Project>
       <Private>True</Private>
