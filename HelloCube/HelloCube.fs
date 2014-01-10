@@ -1,4 +1,4 @@
-﻿module Program
+﻿module HelloCube
 
 open OpenTK
 open OpenTK.Graphics
