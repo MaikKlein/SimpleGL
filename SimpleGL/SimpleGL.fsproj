@@ -8,9 +8,11 @@
     <ProjectGuid>3142f9e3-ef32-477a-a3e8-2fcdb3a9baea</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>FTk</RootNamespace>
-    <AssemblyName>FTk</AssemblyName>
+    <AssemblyName>SimpleGL</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <Name>SimpleGL</Name>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -37,10 +39,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data.TypeProviders" />
-    <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
+    <Reference Include="mscorlib" />
     <Reference Include="OpenTK, Version=1.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4" />
     <Reference Include="System" />
     <Reference Include="System.Core" />

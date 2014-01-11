@@ -1,15 +1,22 @@
 ﻿#version 400
  
 in vec3 vPosition;
-in vec3 vColor;
+in vec3 vNormal;
+
 out vec4 color;
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
+
+uniform mat4 normalMatrix;
+uniform mat4 mvp;
+uniform mat4 modelView;
+uniform vec4 lightPos;
+
 void main()
 {   
-    mat4 modelview = view * model;
-    mat4 normal_matrix = transpose(inverse(modelview));
-    gl_Position =  proj * modelview * vec4(vPosition, 1.0);
-    color = vec4( vColor, 1.0);
+    vec4 tnorm = normalize(normalMatrix * vec4(vNormal, 0.0));
+    vec4 eyeCord= modelView * vec4(vPosition, 1.0);
+    vec4 s = normalize(lightPos - eyeCord) ;
+    float angle = max(dot(tnorm,s),0.0);
+
+    gl_Position = mvp * vec4(vPosition, 1.0);
+    color = angle * vec4(1,0,0,1) + vec4(0.1,0.1,0.1,1);
 }

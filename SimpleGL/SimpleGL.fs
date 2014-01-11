@@ -10,11 +10,15 @@ open OpenTK.Graphics.OpenGL4
 open OpenTK.Input
 open System.IO
 
+let toRad x = x * (float32) System.Math.PI / 180.0f
+
 let loadshader (name : String) stype = 
     let address = GL.CreateShader(stype)
     use sr = new StreamReader(name)
     GL.ShaderSource(address, sr.ReadToEnd())
     GL.CompileShader(address)
+    let r = GL.GetShaderInfoLog(address)
+    Console.WriteLine(r)
     address
 
 type Buffer = 
@@ -36,6 +40,7 @@ type Instancing(pos : int, components : int, t : VertexAttribPointerType, norm :
             GL.EnableVertexAttribArray(pos)
             GL.VertexAttribPointer(pos, components, t, norm, size, pointer)
             GL.VertexAttribDivisor(pos, 1)
+
 
 type VBO<'T when 'T : (new : unit -> 'T) and 'T : struct and 'T :> ValueType>(target : BufferTarget, size : int, dataSize : int, data : 'T [], pos : int, usage : BufferUsageHint, b : bool) = 
     let h = GL.GenBuffer()
@@ -66,22 +71,30 @@ type VBO =
         VBO(target, size, Vector3.SizeInBytes, data, pos, usage, b)
 
 type Shader(filepath : String, stype : ShaderType) = 
-    member this.Handle = loadshader filepath stype
+    let h = loadshader filepath stype
+    member this.Handle = h
 
-type ShaderProgram(shaders) = 
+type VertexShader = {shader: Shader} with
+    static member Create path = {shader = Shader(path,ShaderType.VertexShader)}  
+
+type FragmentShader = {shader: Shader} with
+    static member Create path = {shader = Shader(path,ShaderType.FragmentShader)}  
+
+type ShaderProgram(vs: VertexShader, fs: FragmentShader) = 
     member this.GetAttribLocation(name : String) = 
         GL.GetAttribLocation(this.Handle, name)
     member this.GetUniformLocation(name) = 
         GL.GetUniformLocation(this.Handle, name)
+    member this.UniForm4 pos value = 
+        GL.Uniform4(pos, ref value)
     member this.Uniform1 h (value : float32) = GL.Uniform1(h, value)
     member this.UniformMatrix4 h (value : Matrix4) = 
         GL.UniformMatrix4(h, false, ref value)
     
     member this.Handle : int = 
         let program = GL.CreateProgram()
-        shaders |> List.iter (fun (s : Shader) -> 
-                       GL.AttachShader(program, s.Handle)
-                       ())
+        GL.AttachShader(program,vs.shader.Handle)
+        GL.AttachShader(program,fs.shader.Handle)
         GL.LinkProgram(program)
         program
     
