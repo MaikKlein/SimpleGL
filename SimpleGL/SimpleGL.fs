@@ -121,3 +121,35 @@ let draw (ptype, first, count, (vao : VAO)) =
     vao.Use()
     GL.DrawArrays(ptype, first, count)
     vao.UnUse()
+
+type Mesh = {program: ShaderProgram
+             ptype  :PrimitiveType
+             count  : int     
+             vao    : VAO}
+
+let render model mesh =
+    mesh.program.UniformMatrix4 (mesh.program.GetUniformLocation "model") model
+    draw(mesh.ptype,0,mesh.count,mesh.vao)
+
+type Transform =
+    | Translate of Matrix4
+    | Rotation of Matrix4
+    | RelRotation of Matrix4 * Matrix4
+    | Id
+
+type SceneGraph = 
+    | Empty
+    | Node of Transform * Mesh Option * SceneGraph list 
+
+let rec renderScene m graph = 
+    match graph with
+    | Node(transform, mesh, nodeList) -> 
+        let model = 
+            match transform with
+            | Translate(m1) ->  m * m1
+            | Rotation(m1) -> m1 * m
+            | RelRotation(t,r) -> t * r * m
+            | Id -> Matrix4.Identity
+        nodeList |> List.iter (fun scene -> renderScene model scene)
+        mesh |> Option.iter (render (model))
+    | Empty -> ()
