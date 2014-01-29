@@ -1,4 +1,4 @@
-﻿#version 440
+﻿#version 400
 
 in vec4 eyeCordFs;
 in vec4 eyeNormalFs;

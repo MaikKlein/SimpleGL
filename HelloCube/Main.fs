@@ -1,5 +1,7 @@
 ﻿module Main
-
-let game = new HelloCube.Game()
-game.Run(60.,60.)
-
+[<EntryPoint>]
+let main args = 
+    let game = new HelloCube.Game()
+    //let game = new Test.Game()
+    game.Run(120.0,120.0)
+    0

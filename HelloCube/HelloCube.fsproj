@@ -54,6 +54,7 @@
     <None Include="App.config" />
     <None Include="vs.glsl" />
     <None Include="fs.glsl" />
+    <Compile Include="Test.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>

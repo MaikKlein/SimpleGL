@@ -41,7 +41,6 @@ type Instancing(pos : int, components : int, t : VertexAttribPointerType, norm :
             GL.VertexAttribPointer(pos, components, t, norm, size, pointer)
             GL.VertexAttribDivisor(pos, 1)
 
-
 type VBO<'T when 'T : (new : unit -> 'T) and 'T : struct and 'T :> ValueType>(target : BufferTarget, size : int, dataSize : int, data : 'T [], pos : int, usage : BufferUsageHint, b : bool) = 
     let h = GL.GenBuffer()
     // new(target : BufferTarget, size : int, data : float [], pos : int, usage : BufferUsageHint, b: bool) =
@@ -74,30 +73,34 @@ type Shader(filepath : String, stype : ShaderType) =
     let h = loadshader filepath stype
     member this.Handle = h
 
-type VertexShader = {shader: Shader} with
-    static member Create path = {shader = Shader(path,ShaderType.VertexShader)}  
+type VertexShader = 
+    { shader : Shader }
+    static member Create path = 
+        { shader = Shader(path, ShaderType.VertexShader) }
 
-type FragmentShader = {shader: Shader} with
-    static member Create path = {shader = Shader(path,ShaderType.FragmentShader)}  
+type FragmentShader = 
+    { shader : Shader }
+    static member Create path = 
+        { shader = Shader(path, ShaderType.FragmentShader) }
 
-type ShaderProgram(vs: VertexShader, fs: FragmentShader) = 
+type ShaderProgram(vs : VertexShader, fs : FragmentShader) = 
+    
+    let h = 
+        let program = GL.CreateProgram()
+        GL.AttachShader(program, vs.shader.Handle)
+        GL.AttachShader(program, fs.shader.Handle)
+        GL.LinkProgram(program)
+        program
+    
     member this.GetAttribLocation(name : String) = 
         GL.GetAttribLocation(this.Handle, name)
     member this.GetUniformLocation(name) = 
         GL.GetUniformLocation(this.Handle, name)
-    member this.UniForm4 pos value = 
-        GL.Uniform4(pos, ref value)
+    member this.UniForm4 pos value = GL.Uniform4(pos, ref value)
     member this.Uniform1 h (value : float32) = GL.Uniform1(h, value)
     member this.UniformMatrix4 h (value : Matrix4) = 
         GL.UniformMatrix4(h, false, ref value)
-    
-    member this.Handle : int = 
-        let program = GL.CreateProgram()
-        GL.AttachShader(program,vs.shader.Handle)
-        GL.AttachShader(program,fs.shader.Handle)
-        GL.LinkProgram(program)
-        program
-    
+    member this.Handle : int = h
     member this.Use() = GL.UseProgram(this.Handle)
 
 type VAO(buffers) = 
@@ -122,34 +125,72 @@ let draw (ptype, first, count, (vao : VAO)) =
     GL.DrawArrays(ptype, first, count)
     vao.UnUse()
 
-type Mesh = {program: ShaderProgram
-             ptype  :PrimitiveType
-             count  : int     
-             vao    : VAO}
+type Mesh = 
+    { program : ShaderProgram
+      ptype : PrimitiveType
+      count : int
+      vao : VAO }
 
-let render model mesh =
+let render model mesh = 
     mesh.program.UniformMatrix4 (mesh.program.GetUniformLocation "model") model
-    draw(mesh.ptype,0,mesh.count,mesh.vao)
+    draw (mesh.ptype, 0, mesh.count, mesh.vao)
 
-type Transform =
-    | Translate of Matrix4
-    | Rotation of Matrix4
-    | RelRotation of Matrix4 * Matrix4
+type TranslationMatrix4 = Matrix4
+
+type RotationMatrix4 = Matrix4
+
+type Transform = 
+    | Translate of TranslationMatrix4
+    | Rotation of RotationMatrix4
+    | RelRotation of TranslationMatrix4 * RotationMatrix4
     | Id
 
-type SceneGraph = 
-    | Empty
-    | Node of Transform * Mesh Option * SceneGraph list 
+type Node = 
+    { trans : Transform
+      mesh : Mesh Option
+      nodeList : Node list }
 
-let rec renderScene m graph = 
-    match graph with
-    | Node(transform, mesh, nodeList) -> 
-        let model = 
-            match transform with
-            | Translate(m1) ->  m * m1
-            | Rotation(m1) -> m1 * m
-            | RelRotation(t,r) -> t * r * m
-            | Id -> Matrix4.Identity
-        nodeList |> List.iter (fun scene -> renderScene model scene)
-        mesh |> Option.iter (render (model))
-    | Empty -> ()
+type BoundingBox = 
+    { min : Vector3
+      max : Vector3 }
+
+type RenderMesh = 
+    { model : Matrix4
+      mesh : Mesh }
+
+let renderMesh l = l |> List.iter (fun r -> render r.model r.mesh)
+
+let rec genRenderMeshList m graph renderList = 
+    let transform = graph.trans
+    let mesh = graph.mesh
+    let nodeList = graph.nodeList
+    
+    let model = 
+        match transform with
+        | Translate(m1) -> m * m1
+        | Rotation(m1) -> m1 * m
+        | RelRotation(t, r) -> t * r * m
+        | Id -> Matrix4.Identity
+    
+    let f renderMeshList = 
+        async { 
+            return match nodeList with
+                   | [] -> renderMeshList
+                   | _ -> 
+                       nodeList |> List.fold (fun acc scene -> 
+                                       let l = 
+                                           genRenderMeshList model scene 
+                                               renderMeshList
+                                       l @ acc) []
+        }
+        |> Async.RunSynchronously
+    
+    match mesh with
+    | Some(m) -> 
+        let renderMesh = 
+            { model = model
+              mesh = m }
+        f <| renderMesh :: renderList
+    | None -> f renderList
+
+let showFps dt = printfn "%f" (1.0f / dt)
