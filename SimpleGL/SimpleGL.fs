@@ -103,27 +103,28 @@ type ShaderProgram(vs : VertexShader, fs : FragmentShader) =
     member this.Handle : int = h
     member this.Use() = GL.UseProgram(this.Handle)
 
-type VAO(buffers) = 
-    
-    let handle = 
+type VAO = {handle: int} with
+    static member Create buffers = 
         let h = GL.GenVertexArray()
         GL.BindVertexArray(h)
         buffers |> List.iter (fun (vbo : Buffer) -> vbo.Bind())
         GL.BindVertexArray(0)
-        h
-    
-    member this.Handle = handle
-    member this.UnUse() = GL.BindVertexArray(0)
-    member this.Use() = GL.BindVertexArray(this.Handle)
+        {handle = h}
+    static member Use {handle = h} =
+        GL.BindVertexArray(h)
 
-let indexDraw (mode, count, t, (vao : VAO)) = 
-    vao.Use()
+    static member UnUse() =
+        GL.BindVertexArray(0)
+    
+let indexDraw mode count t vao = 
+    VAO.Use vao
     GL.DrawElements(mode, count, t, 0)
+    VAO.UnUse()
 
 let draw (ptype, first, count, (vao : VAO)) = 
-    vao.Use()
+    VAO.Use vao
     GL.DrawArrays(ptype, first, count)
-    vao.UnUse()
+    VAO.UnUse()
 
 type Mesh = 
     { program : ShaderProgram
