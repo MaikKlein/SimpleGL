@@ -14,9 +14,9 @@ type Game() =
     let fs = 
         FragmentShader.Create 
             "C:\Users\Maik Klein\Documents\Visual Studio 2012\Projects\SimpleGL\HelloCube/fs.glsl"
-    let program = ShaderProgram(vs, fs)
-    let attribute_vpos = program.GetAttribLocation "vPosition"
-    let attribute_vnorm = program.GetAttribLocation "vNormal"
+    let program = ShaderProgram.Create vs fs
+    let attribute_vpos = ShaderProgram.GetAttribLocation "vPosition" program
+    let attribute_vnorm = ShaderProgram.GetAttribLocation "vNormal" program
     let view = 
         Matrix4.LookAt
             (Vector3(0.f, 0.f, 10.f), Vector3(0.f, 0.f, 0.f), 
@@ -34,7 +34,7 @@ type Game() =
             VBO.from 
                 (BufferTarget.ArrayBuffer, 3, CubeData.ndata, attribute_vnorm, 
                  BufferUsageHint.StaticDraw, false)
-        VAO.Create [ vbo_vertex; vbo_normal ]
+        VAO.Create [ vbo_vertex; vbo_normal ] None
     
     let mesh = 
         { program = program
@@ -46,15 +46,15 @@ type Game() =
     
     override o.OnLoad e = 
         base.OnLoad(e)
-        program.Use()
+        ShaderProgram.Use program
         //o.WindowBorder <- WindowBorder.Hidden
         // o.WindowState <- WindowState.Fullscreen
         let lightPos = Vector4.Transform(Vector4(2.0f, 10.0f, 8.0f, 1.0f), view)
-        program.UniForm4 (program.GetUniformLocation "lightPos") (lightPos)
-        program.UniformMatrix4 (program.GetUniformLocation "proj") proj
-        program.UniformMatrix4 (program.GetUniformLocation "view") view
+        ShaderProgram.UniForm4 (ShaderProgram.GetUniformLocation "lightPos" program) lightPos 
+        ShaderProgram.UniformMatrix4 (ShaderProgram.GetUniformLocation "proj" program) proj 
+        ShaderProgram.UniformMatrix4 (ShaderProgram.GetUniformLocation "view" program) view 
         let mutable m = Matrix4.CreateRotationX(toRad count)
-        let p = (program.GetUniformLocation "model")
+        let p = ShaderProgram.GetUniformLocation "model" program
         GL.UniformMatrix4(p, false, &m)
     
     override o.OnResize e = 
