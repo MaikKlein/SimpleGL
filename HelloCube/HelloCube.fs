@@ -15,8 +15,10 @@ type Game() =
         FragmentShader.Create 
             "C:\Users\Maik Klein\Documents\Visual Studio 2012\Projects\SimpleGL\HelloCube/fs.glsl"
     let program = ShaderProgram.Create vs fs
+    
     let attribute_vpos = ShaderProgram.GetAttribLocation "vPosition" program
-    let attribute_vnorm = ShaderProgram.GetAttribLocation "vNormal" program
+    let attribute_vnorm =  ShaderProgram.GetAttribLocation "vNormal" program
+
     let view = 
         Matrix4.LookAt
             (Vector3(0.f, 0.f, 10.f), Vector3(0.f, 0.f, 0.f), 

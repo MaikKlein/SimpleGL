@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HelloCube", "HelloCube\HelloCube.fsproj", "{2DFAFC12-EABE-40F2-851B-F4D77DB97B5F}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SimpleGL", "SimpleGL\SimpleGL.fsproj", "{3142F9E3-EF32-477A-A3E8-2FCDB3A9BAEA}"
@@ -22,8 +24,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal
