@@ -9,7 +9,7 @@ open OpenTK.Graphics
 open OpenTK.Graphics.OpenGL4
 open OpenTK.Input
 open System.IO
-
+                                                                                                  
 let toRad x = x * (float32) System.Math.PI / 180.0f
 
 let loadshader (name : String) stype = 
@@ -20,9 +20,6 @@ let loadshader (name : String) stype =
     let r = GL.GetShaderInfoLog(address)
     Console.WriteLine(r)
     address
-
-type Buffer = 
-    abstract Bind : unit -> unit
 
 type IBO = 
     { Handle : int
@@ -42,73 +39,54 @@ type IBO =
              (nativeint) (ibo.data.Length * sizeof<int>), ibo.data, ibo.usage)
         ()
 
-type Instancing(pos : int, components : int, t : VertexAttribPointerType, norm : bool, size : int, pointer : int) = 
-    interface Buffer with
-        member this.Bind() = 
-            GL.EnableVertexAttribArray(pos)
-            GL.VertexAttribPointer(pos, components, t, norm, size, pointer)
-            GL.VertexAttribDivisor(pos, 1)
+//type Instancing(pos : int, components : int, t : VertexAttribPointerType, norm : bool, size : int, pointer : int) = 
+//    interface Buffer with
+//        member this.Bind() = 
+//            GL.EnableVertexAttribArray(pos)
+//            GL.VertexAttribPointer(pos, components, t, norm, size, pointer)
+//            GL.VertexAttribDivisor(pos, 1)
 
-//type VBO<'T when 'T : (new : unit -> 'T) and 'T : struct and 'T :> ValueType> = 
-//          {Handle: int
-//           target: BufferTarget
-//           size: int
-//           dataSize: int
-//           data: 'T []
-//           pos: int
-//           usage: BufferUsageHint
-//           b: bool} with
-//    static member Create target size dataSize pos usage b data =
-//        let f = VBO.Create1 target size pos usage b
-//        let r = match data with
-//                Vec2(v) -> f Vector2.SizeInBytes v
-//        r
-//    static member Create1 target size pos usage b dataSize data =
-//        let h = GL.GenBuffer()
-//        {Handle = h
-//         target = target
-//         size = size
-//         dataSize = dataSize
-//         data = data
-//         pos = pos
-//         usage = usage
-//         b = b}
-//    static member Bind vbo =
-//        GL.EnableVertexAttribArray(vbo.pos)
-//        GL.BindBuffer(vbo.target, vbo.Handle)
-//        GL.BufferData
-//            (vbo.target, (nativeint) (vbo.data.Length * vbo.dataSize), vbo.data, vbo.usage)
-//        GL.VertexAttribPointer
-//            (vbo.pos, vbo.size, VertexAttribPointerType.Float, false, 0, 0)
-//        if vbo.b then GL.VertexAttribDivisor(vbo.pos, 1)
-//        else GL.VertexAttribDivisor(vbo.pos, 0)
-//        ()       
-type VBO<'T when 'T : (new : unit -> 'T) and 'T : struct and 'T :> ValueType>(Handle : int, target : BufferTarget, size : int, dataSize : int, data : 'T [], pos : int, usage : BufferUsageHint, b : bool) = 
-    interface Buffer with
-        member this.Bind() = 
-            GL.EnableVertexAttribArray(pos)
-            GL.BindBuffer(target, Handle)
-            GL.BufferData<'T>
-                (target, (nativeint) (data.Length * dataSize), data, usage)
-            GL.VertexAttribPointer
-                (pos, size, VertexAttribPointerType.Float, false, 0, 0)
-            if b then GL.VertexAttribDivisor(pos, 1)
-            else GL.VertexAttribDivisor(pos, 0)
-            ()
+type VBO<'T when 'T : (new : unit -> 'T) and 'T : struct and 'T :> ValueType> = 
+    { Handle : int
+      target : BufferTarget
+      size : int
+      dataSize : int
+      data : 'T []
+      pos : int
+      usage : BufferUsageHint }
 
 type VBO = 
-    
-    static member from (target : BufferTarget, size : int, dataSize : int, data, 
-                        pos : int, usage : BufferUsageHint, b : bool) = 
+    static member CreateImpl(target, size, pos, usage, dataSize, (data : 'T [])) = 
         let h = GL.GenBuffer()
-        VBO(h, target, size, dataSize, data, pos, usage, b)
-    
-    static member from (target : BufferTarget, size : int, data : float [], 
-                        pos : int, usage : BufferUsageHint, b : bool) = 
-        VBO.from (target, size, sizeof<float>, data, pos, usage, b)
-    static member from (target : BufferTarget, size : int, data : Vector3 [], 
-                        pos : int, usage : BufferUsageHint, b : bool) = 
-        VBO.from (target, size, Vector3.SizeInBytes, data, pos, usage, b)
+        { Handle = h
+          target = target
+          size = size
+          dataSize = dataSize
+          data = data
+          pos = pos
+          usage = usage }
+
+type VBO with   
+    static member Create(target, size, pos, usage, (data : Vector3 [])) = 
+        VBO.CreateImpl(target, size, pos, usage, Vector3.SizeInBytes, data)
+
+    static member Create(target, size, pos, usage, (data : Vector2 [])) = 
+        VBO.CreateImpl(target, size, pos, usage, Vector2.SizeInBytes, data)
+
+    static member Create(target, size, pos, usage, (data : float [])) = 
+        VBO.CreateImpl(target, size, pos, usage, sizeof<float>, data)
+   
+    static member Bind vbo = 
+        GL.EnableVertexAttribArray(vbo.pos)
+        GL.BindBuffer(vbo.target, vbo.Handle)
+        GL.BufferData
+            (vbo.target, (nativeint) (vbo.data.Length * vbo.dataSize), vbo.data, 
+             vbo.usage)
+        GL.VertexAttribPointer
+            (vbo.pos, vbo.size, VertexAttribPointerType.Float, false, 0, 0)
+        //if vbo.b then GL.VertexAttribDivisor(vbo.pos, 1)
+        //else GL.VertexAttribDivisor(vbo.pos, 0)
+        ()
 
 type Shader = 
     { Handle : int }
@@ -118,12 +96,12 @@ type Shader =
 
 type VertexShader = 
     { shader : Shader }
-    static member Create path = 
+    static member Create(path) = 
         { shader = Shader.Create path ShaderType.VertexShader }
 
 type FragmentShader = 
     { shader : Shader }
-    static member Create path = 
+    static member Create(path) = 
         { shader = Shader.Create path ShaderType.FragmentShader }
 
 type ShaderProgram = 
@@ -131,7 +109,7 @@ type ShaderProgram =
       vs : VertexShader
       fs : FragmentShader }
     
-    static member Create (v : VertexShader) f = 
+    static member Create (v : VertexShader, f) = 
         let h = 
             let program = GL.CreateProgram()
             GL.AttachShader(program, v.shader.Handle)
@@ -155,10 +133,10 @@ type ShaderProgram =
 type VAO = 
     { Handle : int }
     
-    static member Create vboList (ibo : IBO Option) = 
+    static member Create(vboList, ?ibo) = 
         let h = GL.GenVertexArray()
         GL.BindVertexArray(h)
-        vboList |> List.iter (fun (vbo : Buffer) -> vbo.Bind())
+        vboList |> List.iter (fun vbo  -> VBO.Bind vbo)
         ibo |> Option.iter (fun ibo -> IBO.Bind ibo)
         GL.BindVertexArray(0)
         { Handle = h }

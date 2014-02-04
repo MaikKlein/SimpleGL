@@ -14,11 +14,9 @@ type Game() =
     let fs = 
         FragmentShader.Create 
             "C:\Users\Maik Klein\Documents\Visual Studio 2012\Projects\SimpleGL\HelloCube/fs.glsl"
-    let program = ShaderProgram.Create vs fs
-    
+    let program = ShaderProgram.Create(vs, fs)
     let attribute_vpos = ShaderProgram.GetAttribLocation "vPosition" program
-    let attribute_vnorm =  ShaderProgram.GetAttribLocation "vNormal" program
-
+    let attribute_vnorm = ShaderProgram.GetAttribLocation "vNormal" program
     let view = 
         Matrix4.LookAt
             (Vector3(0.f, 0.f, 10.f), Vector3(0.f, 0.f, 0.f), 
@@ -29,14 +27,14 @@ type Game() =
     
     let vao = 
         let vbo_vertex = 
-            VBO.from 
-                (BufferTarget.ArrayBuffer, 3, CubeData.vertdata, attribute_vpos, 
-                 BufferUsageHint.StaticDraw, false)
+            VBO.Create
+                (BufferTarget.ArrayBuffer, 3, attribute_vpos, 
+                 BufferUsageHint.StaticDraw, CubeData.vertdata)
         let vbo_normal = 
-            VBO.from 
-                (BufferTarget.ArrayBuffer, 3, CubeData.ndata, attribute_vnorm, 
-                 BufferUsageHint.StaticDraw, false)
-        VAO.Create [ vbo_vertex; vbo_normal ] None
+            VBO.Create
+                (BufferTarget.ArrayBuffer, 3, attribute_vnorm, 
+                 BufferUsageHint.StaticDraw, CubeData.ndata)
+        VAO.Create([ vbo_vertex; vbo_normal ])
     
     let mesh = 
         { program = program
@@ -52,9 +50,12 @@ type Game() =
         //o.WindowBorder <- WindowBorder.Hidden
         // o.WindowState <- WindowState.Fullscreen
         let lightPos = Vector4.Transform(Vector4(2.0f, 10.0f, 8.0f, 1.0f), view)
-        ShaderProgram.UniForm4 (ShaderProgram.GetUniformLocation "lightPos" program) lightPos 
-        ShaderProgram.UniformMatrix4 (ShaderProgram.GetUniformLocation "proj" program) proj 
-        ShaderProgram.UniformMatrix4 (ShaderProgram.GetUniformLocation "view" program) view 
+        ShaderProgram.UniForm4 
+            (ShaderProgram.GetUniformLocation "lightPos" program) lightPos
+        ShaderProgram.UniformMatrix4 
+            (ShaderProgram.GetUniformLocation "proj" program) proj
+        ShaderProgram.UniformMatrix4 
+            (ShaderProgram.GetUniformLocation "view" program) view
         let mutable m = Matrix4.CreateRotationX(toRad count)
         let p = ShaderProgram.GetUniformLocation "model" program
         GL.UniformMatrix4(p, false, &m)
@@ -84,13 +85,6 @@ type Game() =
         let r = Matrix4.CreateRotationY(toRad count)
         let r1 = Matrix4.CreateRotationX(toRad count)
         
-        // let node2_2_1 = Node(RelRotation(t1,r),Some(mesh),[])
-        // let node2_2   = Node(Translate(t3),Some(mesh),[node2_2_1])
-        // let node2_1   = Node(Translate(t2),Some(mesh),[])
-        // let node1_1   = Node(Rotation(r),Some(mesh),[])
-        //let node1 = Node(Translate(t),None,[node1_1])
-        //let node2 = Node(Translate(t1),None,
-        //[node2_1;node2_2])
         let node1_1 = 
             { trans = Rotation(r)
               mesh = Some(mesh)
